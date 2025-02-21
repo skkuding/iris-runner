@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Iris Runner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css"
+    />
+    <!-- CodeMirror CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css"
+    />
+    <style>
+      /* 원래 textarea는 CodeMirror로 대체되므로 숨깁니다. */
+      #editor {
+        display: none;
+      }
+      /* CodeMirror 에디터가 컨테이너를 꽉 채우도록 */
+      .CodeMirror {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body
+    class="m-0 p-0 bg-gray-900 text-gray-100 h-screen flex flex-col font-mono overflow-y-hidden"
+  >
+    <header class="flex items-center justify-between px-4 py-2 bg-gray-800">
+      <div>
+        <label for="languageSelect" class="mr-2">Language:</label>
+        <select
+          id="languageSelect"
+          class="bg-gray-700 text-white rounded px-2 py-1"
+        >
+          <option value="c">C</option>
+          <option value="cpp">C++</option>
+          <option value="javascript">JavaScript</option>
+          <option value="go">Go</option>
+          <option value="java">Java</option>
+          <option value="python">Python3</option>
+        </select>
+      </div>
+
+      <button
+        id="runButton"
+        class="bg-green-600 hover:bg-green-500 text-white px-4 py-1 rounded"
+      >
+        RUN
+      </button>
+    </header>
+
+    <div class="flex-1 flex flex-col">
+      <div class="flex-none h-[70%]">
+        <textarea
+          id="editor"
+          class="px-2 py-3 w-full h-full"
+        ></textarea>
+      </div>
+
+      <div id="terminal" class="bg-black p-4 h-[30%] overflow-y-scroll">
+        <div id="terminal-container" class="h-full"></div>
+      </div>
+    </div>
+
+    <!-- Xterm JS -->
+    <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
+    <!-- CodeMirror JS 및 모드들 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/clike/clike.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/go/go.min.js"></script>
+    <script>
+      const codeEditor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+        lineNumbers: true,
+        mode: "text/x-csrc"
+      });
+
+      codeEditor.setSize("100%", "100%");
+
+      const languageSelect = document.getElementById("languageSelect");
+      languageSelect.addEventListener("change", function() {
+        const lang = languageSelect.value;
+        let mode;
+        switch (lang) {
+          case "c":
+            mode = "text/x-csrc";
+            break;
+          case "cpp":
+            mode = "text/x-c++src";
+            break;
+          case "java":
+            mode = "text/x-java";
+            break;
+          case "python":
+            mode = "text/x-python";
+            break;
+          case "javascript":
+            mode = "javascript";
+            break;
+          case "go":
+            mode = "go";
+            break;
+          default:
+            mode = "text/plain";
+        }
+        codeEditor.setOption("mode", mode);
+      });
+
+      const term = new Terminal({ convertEol: true, disableStdin: false });
+      term.open(document.getElementById("terminal-container"));
+      term.focus();
+
+      let ws = null;
+      const runButton = document.getElementById("runButton");
+
+      function getCodeConfig(language) {
+        let filename, compileCmd, command;
+        switch (language) {
+          case "c":
+            filename = "main.c";
+            compileCmd = "gcc main.c -o main";
+            command = "./main";
+            break;
+          case "cpp":
+            filename = "main.cpp";
+            compileCmd = "g++ main.cpp -o main";
+            command = "./main";
+            break;
+          case "javascript":
+            filename = "main.js";
+            compileCmd = undefined;
+            command = "node main.js";
+            break;
+          case "go":
+            filename = "main.go";
+            compileCmd = "go build -o main main.go";
+            command = "./main";
+            break;
+          case "java":
+            filename = "Main.java";
+            compileCmd = "javac Main.java";
+            command = "java Main";
+            break;
+          case "python":
+            filename = "main.py";
+            compileCmd = undefined;
+            command = "python main.py";
+            break;
+          default:
+            filename = "main.c";
+            compileCmd = "gcc main.c -o main";
+            command = "./main";
+        }
+        return { filename, compileCmd, command };
+      }
+
+      let onDataDisposable = null;
+
+      runButton.addEventListener("click", () => {
+        term.clear();
+
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.close();
+        }
+
+        if (onDataDisposable) {
+          onDataDisposable.dispose();
+        }
+
+        ws = new WebSocket("ws://115.145.172.194/ws");
+        term.writeln("[시스템] 실행 서버에 연결을 시도합니다...");
+
+        ws.onopen = () => {
+          term.writeln("[시스템] 실행 서버 연결 성공\n");
+          term.focus();
+
+          const language = languageSelect.value;
+          // CodeMirror 에디터에서 소스 코드를 가져옵니다.
+          const sourceCode = codeEditor.getValue();
+          const { filename, compileCmd, command } = getCodeConfig(language);
+
+          const code_msg = {
+            type: "code",
+            language: language,
+            filename: filename,
+            source: sourceCode,
+            compile_cmd: compileCmd,
+            command: command,
+          };
+
+          ws.send(JSON.stringify(code_msg));
+          term.writeln(
+            `${compileCmd || ""}${compileCmd && command ? " && " : ""}${
+              command || ""
+            }`
+          );
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            const msgType = data.type;
+
+            if (msgType === "compile_success") {
+              return;
+            }
+
+            if (msgType === "compile_error") {
+              term.writeln(data.stderr);
+            }
+
+            if (msgType === "echo") {
+              term.write(data.data || "");
+            }
+
+            if (msgType === "stdout") {
+              term.write(data.data || "");
+            }
+
+            if (msgType === "stderr") {
+              term.write(data.data || "");
+            }
+
+            if (msgType === "exit") {
+              term.writeln(
+                "\n[시스템] 프로그램 종료 exit code: " + data.return_code
+              );
+            }
+          } catch (e) {
+            term.writeln("[에러] " + e);
+          }
+        };
+
+        ws.onclose = () => {
+          term.writeln("\n[시스템] 실행 서버 연결 종료....");
+        };
+
+        ws.onerror = () => {
+          term.writeln("[시스템] 에러 발생으로 연결 끊김");
+        };
+
+        onDataDisposable = term.onData((data) => {
+          if (data === "\r" || data === "\n") {
+            term.write("\r\n");
+          }
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            const input_msg = {
+              type: "input",
+              data: data,
+            };
+            ws.send(JSON.stringify(input_msg));
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
