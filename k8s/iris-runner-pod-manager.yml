@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iris-runner-pod-manager
+  labels:
+    app: iris-runner-pod-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: iris-runner-pod-manager
+  template:
+    metadata:
+      labels:
+        app: iris-runner-pod-manager
+    spec:
+      serviceAccountName: pod-manager
+      containers:
+      - name: iris-runner-pod-manager
+        image: iris-runner-pod-manager:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            cpu: "0.5"
+            memory: "512Mi"
+          requests:
+            cpu: "0.2"
+            memory: "200Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: iris-runner-pod-manager
+spec:
+  selector:
+    app: iris-runner-pod-manager
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    protocol: TCP
+  type: ClusterIP
+  sessionAffinity: ClientIP
