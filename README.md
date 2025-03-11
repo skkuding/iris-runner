@@ -1,6 +1,6 @@
 URL : [codedang-runner.my](http://codedang-runner.my)
 
-![image.png](attachment:cc17f7f8-938f-4d2c-af20-4cdbb45f8399:image.png)
+<img width="1630" alt="image" src="https://github.com/user-attachments/assets/62ba5dd5-87a9-4a6c-8866-9e854b8c0233" />
 
 ## **프론트엔드 로직**
 
