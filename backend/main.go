@@ -182,12 +182,7 @@ func handleCode(ctx *ConnectionContext, msg *Message) error {
 
 		sendJSON(ctx.conn, map[string]interface{}{
 			"type": "stdout",
-			"data": "runInteractive()\n",
-		})
-
-		sendJSON(ctx.conn, map[string]interface{}{
-			"type": "stdout",
-			"data": "execute: " + msg.Command + "\n",
+			"data": ">>> runInSandbox()\n",
 		})
 
 		err := runInSandbox(ctx, msg.Language)
@@ -288,6 +283,11 @@ func runInSandbox(ctx *ConnectionContext, language string) error {
 	imageName := "sandbox:" + uniqueID
 	BuildImage(cli, imageName, "sandbox-c.Dockerfile", ".")
 
+	sendJSON(ctx.conn, map[string]interface{}{
+		"type": "stdout",
+		"data": ">>>> Image build succeed\n",
+	})
+
 	containerConfig := &container.Config{
 		Image: imageName,
 		Tty:   false,
@@ -297,6 +297,11 @@ func runInSandbox(ctx *ConnectionContext, language string) error {
 		return fmt.Errorf("failed to create container: %v", err)
 	}
 
+	sendJSON(ctx.conn, map[string]interface{}{
+		"type": "stdout",
+		"data": ">>>> Container created\n",
+	})
+
 	containerID := resp.ID
 	defer func() {
 		cli.ContainerRemove(ctx_bg, containerID, container.RemoveOptions{Force: true})
@@ -305,6 +310,11 @@ func runInSandbox(ctx *ConnectionContext, language string) error {
 	if err := cli.ContainerStart(ctx_bg, resp.ID, container.StartOptions{}); err != nil {
 		return fmt.Errorf("failed to start container: %v", err)
 	}
+
+	sendJSON(ctx.conn, map[string]interface{}{
+		"type": "stdout",
+		"data": ">>>> Container started\n",
+	})
 
 	out, err := cli.ContainerLogs(ctx_bg, resp.ID, container.LogsOptions{
 		ShowStdout: true,
@@ -317,7 +327,12 @@ func runInSandbox(ctx *ConnectionContext, language string) error {
 	}
 	defer out.Close()
 
-	go streamOutput(ctx, out, "stdout")
+	sendJSON(ctx.conn, map[string]interface{}{
+		"type": "stdout",
+		"data": ">>>> Container logs received\n",
+	})
+
+	streamOutput(ctx, out, "stdout")
 
 	return nil
 }
