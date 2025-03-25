@@ -72,7 +72,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	// create /var/log/iris-runner/hi.txt file
-	err := os.WriteFile("/var/log/iris-runner/hi.txt", []byte("hi"), 0644)
+	err = os.WriteFile("/var/log/iris-runner/hi.txt", []byte("hi"), 0644)
 	if err != nil {
 		panic(err)
 	}
