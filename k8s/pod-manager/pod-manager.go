@@ -57,7 +57,7 @@ func (pm *PodManager) createRunnerPod() (*RunnerPod, error) {
                     },
                     Resources: corev1.ResourceRequirements{
                         Limits: corev1.ResourceList{
-                            corev1.ResourceMemory: resource.MustParse("512Mi")
+                            corev1.ResourceMemory: resource.MustParse("512Mi"),
                         },
                         Requests: corev1.ResourceList{
                             corev1.ResourceCPU:    resource.MustParse("0.5"),
