@@ -9,7 +9,11 @@ RUN apk update && apk add --no-cache \
     py3-pip \
     openjdk11 \
     build-base \
+    docker \
+    openrc \
     git
+
+RUN rc-update add docker boot
 
 WORKDIR /app
 
