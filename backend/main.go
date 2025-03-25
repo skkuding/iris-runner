@@ -45,11 +45,6 @@ var upgrader = websocket.Upgrader{
 }
 
 func main() {
-	// TODO: remove me
-	// this is for testing purpose
-	// create /var/log/iris-runner/hi.txt file
-	os.WriteFile("/var/log/iris-runner/hi.txt", []byte("hi"), 0644)
-
 	http.HandleFunc("/ws", wsHandler)
 
 	addr := ":8000"
@@ -68,6 +63,19 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	ctx := &ConnectionContext{conn: conn}
+
+	// TODO: remove me
+	// this is for testing purpose
+	sendJSON(ctx.conn, map[string]interface{}{
+		"type": "stdout",
+		"data": "Hi, this is a message from server",
+	})
+
+	// create /var/log/iris-runner/hi.txt file
+	err := os.WriteFile("/var/log/iris-runner/hi.txt", []byte("hi"), 0644)
+	if err != nil {
+		panic(err)
+	}
 
 	for {
 		var msg Message
