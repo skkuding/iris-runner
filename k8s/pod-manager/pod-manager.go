@@ -55,6 +55,15 @@ func (pm *PodManager) createRunnerPod() (*RunnerPod, error) {
                     Ports: []corev1.ContainerPort{
                         {ContainerPort: 8000},
                     },
+                    SecurityContext: &corev1.SecurityContext{
+                        Privileged: func(b bool) *bool { return &b }(true),
+                    },
+                    VolumeMounts: []corev1.VolumeMount{
+                        {
+                            Name: "docker-sock",
+                            MountPath: "/var/run/docker.sock",
+                        },
+                    },
                     Resources: corev1.ResourceRequirements{
                         Limits: corev1.ResourceList{
                             corev1.ResourceMemory: resource.MustParse("512Mi"),
@@ -69,14 +78,11 @@ func (pm *PodManager) createRunnerPod() (*RunnerPod, error) {
             RestartPolicy: corev1.RestartPolicyNever,
             Volumes: []corev1.Volume{
 				{
-					Name: "log",
+					Name: "docker-sock",
 					VolumeSource: corev1.VolumeSource{
                         HostPath: &corev1.HostPathVolumeSource{
-                            Path: "/var/log/iris-runner",
+                            Path: "/var/run/docker.sock",
                         },
-						// PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						// 	ClaimName: "iris-runner-pvc",
-						// },
 					},
 				},
 			},

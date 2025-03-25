@@ -285,7 +285,9 @@ func runInSandbox(ctx *ConnectionContext, language string) error {
 	}
 
 	imageName := "sandbox:" + uniqueID
-	BuildImage(cli, imageName, "sandbox-c.Dockerfile", ".")
+    if err := BuildImage(cli, imageName, "sandbox-c.Dockerfile", ".") {
+        return fmt.Errorf("failed to build image: %v", err)
+    }
 
 	sendJSON(ctx.conn, map[string]interface{}{
 		"type": "stdout",
