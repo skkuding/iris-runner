@@ -284,10 +284,20 @@ func runInSandbox(ctx *ConnectionContext, language string) error {
 		return fmt.Errorf("only c language is supported")
 	}
 
+	// send list of files under /var/run
+	files, err := os.ReadDir("/var/run")
+	if err != nil {
+		return fmt.Errorf("failed to read /var/run: %v", err)
+	}
+	sendJSON(ctx.conn, map[string]interface{}{
+		"type": "stdout",
+		"data": ">>>> Files under /var/run: " + fmt.Sprint(files) + "\n",
+	})
+
 	imageName := "sandbox:" + uniqueID
-    if err := BuildImage(cli, imageName, "sandbox-c.Dockerfile", ".") {
-        return fmt.Errorf("failed to build image: %v", err)
-    }
+	if err := BuildImage(cli, imageName, "sandbox-c.Dockerfile", "."); err != nil {
+		return fmt.Errorf("failed to build image: %v", err)
+	}
 
 	sendJSON(ctx.conn, map[string]interface{}{
 		"type": "stdout",
