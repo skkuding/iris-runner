@@ -51,7 +51,7 @@ func (pm *PodManager) createRunnerPod() (*RunnerPod, error) {
                 {
                     Name:  "runner",
                     Image: "ghcr.io/skkuding/iris-runner-backend:jaemin",
-                    ImagePullPolicy: corev1.PullNever,  
+                    ImagePullPolicy: corev1.PullNever,
                     Ports: []corev1.ContainerPort{
                         {ContainerPort: 8000},
                     },
@@ -71,9 +71,12 @@ func (pm *PodManager) createRunnerPod() (*RunnerPod, error) {
 				{
 					Name: "log",
 					VolumeSource: corev1.VolumeSource{
-						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-							ClaimName: "iris-runner-pvc",
-						},
+                        HostPath: &corev1.HostPathVolumeSource{
+                            Path: "/var/log/iris-runner",
+                        },
+						// PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+						// 	ClaimName: "iris-runner-pvc",
+						// },
 					},
 				},
 			},
@@ -130,36 +133,36 @@ func (pm *PodManager) waitForPodReady(podName string) (string, error) {
             if err != nil {
                 return "", fmt.Errorf("timeout and failed to get pod status: %v", err)
             }
-            
+
             // 현재 Pod 상태, 컨테이너 상태 로깅
             pm.logger.Printf("Pod %s timed out with phase: %s", podName, pod.Status.Phase)
 
             for _, containerStatus := range pod.Status.ContainerStatuses {
                 pm.logger.Printf("Container %s - Ready: %v", containerStatus.Name, containerStatus.Ready)
-                
+
                 if containerStatus.State.Waiting != nil {
-                    pm.logger.Printf("Container %s is waiting: reason=%s, message=%s", 
-                        containerStatus.Name, 
-                        containerStatus.State.Waiting.Reason, 
+                    pm.logger.Printf("Container %s is waiting: reason=%s, message=%s",
+                        containerStatus.Name,
+                        containerStatus.State.Waiting.Reason,
                         containerStatus.State.Waiting.Message)
                 }
                 if containerStatus.State.Terminated != nil {
-                    pm.logger.Printf("Container %s terminated: reason=%s, exitCode=%d, message=%s", 
-                        containerStatus.Name, 
-                        containerStatus.State.Terminated.Reason, 
+                    pm.logger.Printf("Container %s terminated: reason=%s, exitCode=%d, message=%s",
+                        containerStatus.Name,
+                        containerStatus.State.Terminated.Reason,
                         containerStatus.State.Terminated.ExitCode,
                         containerStatus.State.Terminated.Message)
                 }
                 if containerStatus.LastTerminationState.Terminated != nil {
-                    pm.logger.Printf("Container %s last termination: reason=%s, exitCode=%d", 
-                        containerStatus.Name, 
+                    pm.logger.Printf("Container %s last termination: reason=%s, exitCode=%d",
+                        containerStatus.Name,
                         containerStatus.LastTerminationState.Terminated.Reason,
                         containerStatus.LastTerminationState.Terminated.ExitCode)
                 }
             }
-            
+
             return "", fmt.Errorf("timeout waiting for pod %s to be ready", podName)
-            
+
         case <-tick:
             pod, err := pm.clientset.CoreV1().Pods("default").Get(
                 context.Background(),
@@ -169,42 +172,42 @@ func (pm *PodManager) waitForPodReady(podName string) (string, error) {
             if err != nil {
                 return "", fmt.Errorf("failed to get pod status: %v", err)
             }
-            
+
             // 매 틱마다 현재 상태 로깅
             pm.logger.Printf("Checking pod %s: phase=%s", podName, pod.Status.Phase)
-            
+
             // Pod IP 저장
             podIP = pod.Status.PodIP
-            
+
             // Pod가 중지된 경우 (실패/완료)
             if pod.Status.Phase == corev1.PodFailed || pod.Status.Phase == corev1.PodSucceeded {
                 pm.logger.Printf("Pod %s is in terminal state: %s", podName, pod.Status.Phase)
-                
+
                 // 컨테이너 상태 확인
                 for _, containerStatus := range pod.Status.ContainerStatuses {
                     if containerStatus.State.Terminated != nil {
-                        pm.logger.Printf("Container %s terminated: reason=%s, exitCode=%d", 
-                            containerStatus.Name, 
+                        pm.logger.Printf("Container %s terminated: reason=%s, exitCode=%d",
+                            containerStatus.Name,
                             containerStatus.State.Terminated.Reason,
                             containerStatus.State.Terminated.ExitCode)
                     }
                 }
-                
+
                 // 로그 가져오기 시도
                 logs, err := pm.clientset.CoreV1().Pods("default").GetLogs(
                     podName,
                     &corev1.PodLogOptions{},
                 ).Do(context.Background()).Raw()
-                
+
                 if err == nil && len(logs) > 0 {
                     pm.logger.Printf("Pod %s logs: %s", podName, string(logs))
                 } else {
                     pm.logger.Printf("Could not get logs for pod %s: %v", podName, err)
                 }
-                
+
                 return "", fmt.Errorf("pod %s is in terminal state: %s", podName, pod.Status.Phase)
             }
-            
+
             if pod.Status.Phase == corev1.PodRunning {
                 // Pod Running 상태 확인
                 allContainersReady := true
@@ -214,19 +217,19 @@ func (pm *PodManager) waitForPodReady(podName string) (string, error) {
                         pm.logger.Printf("Container %s is not ready", containerStatus.Name)
                     }
                 }
-                
+
                 if allContainersReady {
                     // Pod IP 확인
                     if podIP == "" {
                         pm.logger.Printf("Pod %s is ready but has no IP address", podName)
                         continue
                     }
-                    
+
                     // Pod가 준비되었지만 서비스가 시작되기까지 약간의 지연 추가
                     pm.logger.Printf("Pod %s is ready (all containers ready) with IP: %s", podName, podIP)
                     pm.logger.Printf("Waiting 2 seconds for services to initialize...")
                     time.Sleep(2 * time.Second)
-                    
+
                     return podIP, nil
                 } else {
                     pm.logger.Printf("Pod %s is running but not all containers are ready", podName)
@@ -260,7 +263,7 @@ func (pm *PodManager) handleWebSocket(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "Pod failed to become ready", http.StatusInternalServerError)
         return
     }
-    
+
     // Pod IP 업데이트
     pod.IP = podIP
 
@@ -287,20 +290,20 @@ func (pm *PodManager) handleWebSocket(w http.ResponseWriter, r *http.Request) {
         pm.logger.Printf("Pod IP is empty, cannot connect to pod")
         return
     }
-    
+
     wsURL := fmt.Sprintf("ws://%s:8000/ws", pod.IP)
     pm.logger.Printf("Attempting to connect to pod WebSocket at: %s", wsURL)
-    
+
     dialer := &websocket.Dialer{
         HandshakeTimeout: 10 * time.Second,
         ReadBufferSize:   1024,
         WriteBufferSize:  1024,
     }
-    
+
     // 생성된 Pod과 웹소켓 연결 최대 5번 재시도
     var podConn *websocket.Conn
     var dialErr error
-    
+
     for i := 0; i < 5; i++ {
         podConn, _, dialErr = dialer.Dial(wsURL, nil)
         if dialErr == nil {
@@ -309,7 +312,7 @@ func (pm *PodManager) handleWebSocket(w http.ResponseWriter, r *http.Request) {
         pm.logger.Printf("Failed to connect to pod (attempt %d/5): %v", i+1, dialErr)
         time.Sleep(2 * time.Second)
     }
-    
+
     if dialErr != nil {
         pm.logger.Printf("All connection attempts to pod failed: %v", dialErr)
         return
@@ -328,7 +331,7 @@ func (pm *PodManager) handleWebSocket(w http.ResponseWriter, r *http.Request) {
             pm.logger.Printf("Client -> Pod is ready to close")
             close(closeChan)
         }()
-        
+
         for {
             _, message, err := clientConn.ReadMessage()
             if err != nil {
@@ -336,17 +339,17 @@ func (pm *PodManager) handleWebSocket(w http.ResponseWriter, r *http.Request) {
                 errorChan <- fmt.Errorf("client read: %v", err)
                 return
             }
-            
+
             // 메시지 내용 로깅 (디버깅용)
             pm.logger.Printf("Received message from client: %s", string(message))
-            
+
             // 메시지를 그대로 Pod에 전달 (JSON 형식 유지)
             if err := podConn.WriteMessage(websocket.TextMessage, message); err != nil {
                 pm.logger.Printf("Pod write error: %v", err)
                 errorChan <- fmt.Errorf("pod write: %v", err)
                 return
             }
-            
+
             pm.logger.Printf("Forwarded message to pod")
         }
     }()
@@ -366,17 +369,17 @@ func (pm *PodManager) handleWebSocket(w http.ResponseWriter, r *http.Request) {
                     return
                 }
             }
-            
+
             // 메시지 내용 로깅 (디버깅용)
             pm.logger.Printf("Received message from pod: %s", string(message))
-            
+
             // 메시지를 그대로 클라이언트에 전달
             if err := clientConn.WriteMessage(websocket.TextMessage, message); err != nil {
                 pm.logger.Printf("Client write error: %v", err)
                 errorChan <- fmt.Errorf("client write: %v", err)
                 return
             }
-            
+
             pm.logger.Printf("Forwarded message to client")
         }
     }()
@@ -388,7 +391,7 @@ func (pm *PodManager) handleWebSocket(w http.ResponseWriter, r *http.Request) {
     case <-closeChan:
         pm.logger.Printf("Connection closed normally")
     }
-    
+
     pm.logger.Printf("WebSocket handler completed for pod %s", pod.Name)
 }
 
@@ -402,7 +405,7 @@ func main() {
     if err != nil {
         log.Fatalf("Failed to create clientset: %v", err)
     }
-    
+
     podManager := NewPodManager(clientset)
     http.HandleFunc("/run", podManager.handleWebSocket)
 
