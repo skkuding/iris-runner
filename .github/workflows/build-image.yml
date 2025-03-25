@@ -30,3 +30,5 @@ jobs:
           context: ./backend
           push: true
           tags: ghcr.io/skkuding/iris-runner-backend:jaemin
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
