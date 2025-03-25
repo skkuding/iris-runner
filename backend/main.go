@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -9,6 +10,10 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/client"
+	"github.com/google/uuid"
 
 	"github.com/gorilla/websocket"
 )
@@ -120,6 +125,13 @@ func handleCode(ctx *ConnectionContext, msg *Message) error {
 		filename = "Main.c"
 	}
 
+	// TODO(jaemin): remove this hack
+	// this code is for running c code in docker sandbox
+	// only for testing purpose
+	if msg.Language == "c" {
+		filename = "main.c"
+	}
+
 	// 코드 파일 생성
 	err := os.WriteFile(filename, []byte(msg.Source), 0644)
 	if err != nil {
@@ -155,8 +167,7 @@ func handleCode(ctx *ConnectionContext, msg *Message) error {
 			_ = ctx.cmd.Process.Kill()
 		}
 
-		execArgs := strings.Split(msg.Command, " ")
-		err := runInteractive(ctx, execArgs)
+		err := runInSandbox(ctx, msg.Language)
 		if err != nil {
 			log.Println("runInteractive error:", err)
 			// 실행 중 오류 발생 시 연결 종료
@@ -232,6 +243,57 @@ func runInteractive(ctx *ConnectionContext, args []string) error {
 		ctx.cmd = nil
 		ctx.conn.Close()
 	}()
+
+	return nil
+}
+
+func runInSandbox(ctx *ConnectionContext, language string) error {
+	ctx_bg := context.Background()
+	uniqueID := uuid.New().String()
+
+	cli, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		return err
+	}
+	defer cli.Close()
+
+	if language != "c" {
+		return fmt.Errorf("only c language is supported")
+	}
+
+	imageName := "sandbox:" + uniqueID
+	BuildImage(cli, imageName, "sandbox-c.Dockerfile", ".")
+
+	containerConfig := &container.Config{
+		Image: imageName,
+		Tty:   false,
+	}
+	resp, err := cli.ContainerCreate(ctx_bg, containerConfig, nil, nil, nil, "")
+	if err != nil {
+		return fmt.Errorf("failed to create container: %v", err)
+	}
+
+	containerID := resp.ID
+	defer func() {
+		cli.ContainerRemove(ctx_bg, containerID, container.RemoveOptions{Force: true})
+	}()
+
+	if err := cli.ContainerStart(ctx_bg, resp.ID, container.StartOptions{}); err != nil {
+		return fmt.Errorf("failed to start container: %v", err)
+	}
+
+	out, err := cli.ContainerLogs(ctx_bg, resp.ID, container.LogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Follow:     true,
+		Timestamps: false,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to get container logs: %v", err)
+	}
+	defer out.Close()
+
+	go streamOutput(ctx, out, "stdout")
 
 	return nil
 }
