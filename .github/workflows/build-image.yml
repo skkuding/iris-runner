@@ -12,8 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        directory: ['./backend', './k8s/pod-manager']
-        name: ['backend', 'pod-manager']
+        target: [
+          {dir: './backend', name: 'backend'},
+          {dir: './k8s/pod-manager', name: 'pod-manager'}
+        ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,8 +33,8 @@ jobs:
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
-          context: ${{ matrix.directory }}
+          context: ${{ matrix.target.dir }}
           push: true
-          tags: ghcr.io/skkuding/iris-runner-${{ matrix.name }}:jaemin
+          tags: ghcr.io/skkuding/iris-runner-${{ matrix.target.name }}:jaemin
           cache-from: type=gha
           cache-to: type=gha,mode=max
