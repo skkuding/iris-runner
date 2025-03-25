@@ -188,6 +188,10 @@ func handleCode(ctx *ConnectionContext, msg *Message) error {
 		err := runInSandbox(ctx, msg.Language)
 		// err := runInteractive(ctx, strings.Split(msg.Command, " "))
 		if err != nil {
+			sendJSON(ctx.conn, map[string]interface{}{
+				"type": "stdout",
+				"data": ">>>> error: " + err.Error() + "\n",
+			})
 			log.Println("runInteractive error:", err)
 			// 실행 중 오류 발생 시 연결 종료
 			ctx.conn.Close()
