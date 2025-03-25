@@ -72,10 +72,10 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	// create /var/log/iris-runner/hi.txt file
-	err = os.WriteFile("/var/log/iris-runner/hi.txt", []byte("hi"), 0644)
-	if err != nil {
-		panic(err)
-	}
+	// err = os.WriteFile("/var/log/iris-runner/hi.txt", []byte("hi"), 0644)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	for {
 		var msg Message
@@ -180,7 +180,8 @@ func handleCode(ctx *ConnectionContext, msg *Message) error {
 			_ = ctx.cmd.Process.Kill()
 		}
 
-		err := runInSandbox(ctx, msg.Language)
+		// err := runInSandbox(ctx, msg.Language)
+		err := runInteractive(ctx, strings.Split(msg.Command, " "))
 		if err != nil {
 			log.Println("runInteractive error:", err)
 			// 실행 중 오류 발생 시 연결 종료
