@@ -68,7 +68,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	// this is for testing purpose
 	sendJSON(ctx.conn, map[string]interface{}{
 		"type": "stdout",
-		"data": "Hi, this is a message from server",
+		"data": "Hi, this is a message from server\n",
 	})
 
 	// create /var/log/iris-runner/hi.txt file
@@ -180,8 +180,18 @@ func handleCode(ctx *ConnectionContext, msg *Message) error {
 			_ = ctx.cmd.Process.Kill()
 		}
 
-		// err := runInSandbox(ctx, msg.Language)
-		err := runInteractive(ctx, strings.Split(msg.Command, " "))
+		sendJSON(ctx.conn, map[string]interface{}{
+			"type": "stdout",
+			"data": "runInteractive()\n",
+		})
+
+		sendJSON(ctx.conn, map[string]interface{}{
+			"type": "stdout",
+			"data": "execute: " + msg.Command + "\n",
+		})
+
+		err := runInSandbox(ctx, msg.Language)
+		// err := runInteractive(ctx, strings.Split(msg.Command, " "))
 		if err != nil {
 			log.Println("runInteractive error:", err)
 			// 실행 중 오류 발생 시 연결 종료
