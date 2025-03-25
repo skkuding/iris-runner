@@ -45,6 +45,11 @@ var upgrader = websocket.Upgrader{
 }
 
 func main() {
+	// TODO: remove me
+	// this is for testing purpose
+	// create /var/log/iris-runner/hi.txt file
+	os.WriteFile("/var/log/iris-runner/hi.txt", []byte("hi"), 0644)
+
 	http.HandleFunc("/ws", wsHandler)
 
 	addr := ":8000"

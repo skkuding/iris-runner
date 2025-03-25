@@ -39,3 +39,32 @@ spec:
     protocol: TCP
   type: ClusterIP
   sessionAffinity: ClientIP
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: iris-runner-pv
+spec:
+  capacity:
+    storage: 5Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /var/log/iris-runner
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: iris-runner-pvc
+spec:
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  storageClassName: local-storage
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: iris-runner-log

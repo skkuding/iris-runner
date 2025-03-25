@@ -67,6 +67,16 @@ func (pm *PodManager) createRunnerPod() (*RunnerPod, error) {
                 },
             },
             RestartPolicy: corev1.RestartPolicyNever,
+            Volumes: []corev1.Volume{
+				{
+					Name: "log",
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: "iris-runner-pvc",
+						},
+					},
+				},
+			},
         },
     }
 
