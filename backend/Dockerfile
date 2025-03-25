@@ -23,7 +23,7 @@ RUN go mod download
 
 COPY . /app
 
-RUN go build -o server main.go
+RUN go build -o server
 
 EXPOSE 8000
 
