@@ -259,8 +259,9 @@ func (pm *PodManager) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
     // 모든 종료 상황에서 Pod 안전하게 삭제
     defer func() {
-        pm.logger.Printf("Deleting pod %s", pod.Name)
-        pm.deleteRunnerPod(pod.Name)
+        pm.logger.Printf("Skipping pod deletion for %s", pod.Name)
+        // pm.logger.Printf("Deleting pod %s", pod.Name)
+        // pm.deleteRunnerPod(pod.Name)
     }()
 
     podIP, err := pm.waitForPodReady(pod.Name)
