@@ -50,14 +50,14 @@ func (pm *PodManager) createRunnerPod() (*RunnerPod, error) {
             Containers: []corev1.Container{
                 {
                     Name:  "runner",
-                    Image: "iris-runner-backend:latest",
+                    Image: "ghcr.io/skkuding/iris-runner-backend:jaemin",
                     ImagePullPolicy: corev1.PullNever,  
                     Ports: []corev1.ContainerPort{
                         {ContainerPort: 8000},
                     },
                     Resources: corev1.ResourceRequirements{
                         Limits: corev1.ResourceList{
-                            corev1.ResourceMemory: resource.MustParse("512Mi")
+                            corev1.ResourceMemory: resource.MustParse("512Mi"),
                         },
                         Requests: corev1.ResourceList{
                             corev1.ResourceCPU:    resource.MustParse("0.5"),
