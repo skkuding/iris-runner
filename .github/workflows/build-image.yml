@@ -14,6 +14,7 @@ jobs:
       matrix:
         target: [
           {dir: './backend', name: 'backend'},
+          {dir: './frontend', name: 'frontend'},
           {dir: './k8s/pod-manager', name: 'pod-manager'}
         ]
     steps:
