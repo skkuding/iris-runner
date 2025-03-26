@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"strings"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -115,12 +114,11 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 // "code" 타입 메시지를 처리 (코드 파일 생성 → 컴파일 → 실행)
 func handleCode(ctx *ConnectionContext, msg *Message) error {
-	filename := msg.Filename
-	if filename == "" {
-		filename = "/code/main.c"
-	} else {
-		filename = "/code/" + filename
+	if _, ok := CompileOptions[msg.Language]; !ok {
+		return fmt.Errorf("Unsupported language: %s", msg.Language)
 	}
+
+	filename := CompileOptions[msg.Language].Filename
 
 	// 코드 파일 생성
 	err := os.WriteFile(filename, []byte(msg.Source), 0644)
@@ -133,9 +131,9 @@ func handleCode(ctx *ConnectionContext, msg *Message) error {
 	}
 
 	// 컴파일
-	if msg.CompileCmd != "" {
-		compileArgs := strings.Split(msg.CompileCmd, " ")
-		output, compileErr := runCommand(compileArgs)
+	compileCmd := CompileOptions[msg.Language].CompileCmd
+	if len(compileCmd) > 0 {
+		output, compileErr := runCommand(compileCmd)
 		if compileErr != nil {
 			sendJSON(ctx.conn, map[string]interface{}{
 				"type":   "compile_error",
@@ -152,13 +150,13 @@ func handleCode(ctx *ConnectionContext, msg *Message) error {
 		})
 	}
 
-	if msg.Command != "" {
+	executeCmd := CompileOptions[msg.Language].ExecuteCmd
+	if len(executeCmd) > 0 {
 		if ctx.cmd != nil {
 			_ = ctx.cmd.Process.Kill()
 		}
 
-		execArgs := strings.Split(msg.Command, " ")
-		err := runInteractive(ctx, execArgs)
+		err := runInteractive(ctx, executeCmd)
 		if err != nil {
 			log.Println("runInteractive error:", err)
 			// 실행 중 오류 발생 시 연결 종료
@@ -176,7 +174,6 @@ func runCommand(args []string) (string, error) {
 		return "", fmt.Errorf("no command to run")
 	}
 
-	args = append([]string{"/usr/local/bin/isolate", "--dir=/code", "--run", "--"}, args...)
 	cmd := exec.Command(args[0], args[1:]...)
 	output, err := cmd.CombinedOutput()
 	return string(output), err
@@ -188,7 +185,7 @@ func runInteractive(ctx *ConnectionContext, args []string) error {
 		return fmt.Errorf("no command to run")
 	}
 
-	args = append([]string{"/usr/local/bin/isolate", "--dir=/code", "--run", "--"}, args...)
+	args = append([]string{"/usr/local/bin/isolate", "--dir=/code", "--dir=/usr/bin", "--run", "--"}, args...)
 	cmd := exec.Command(args[0], args[1:]...)
 	ctx.cmd = cmd
 
