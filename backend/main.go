@@ -185,6 +185,7 @@ func runInteractive(ctx *ConnectionContext, args []string) error {
 		return fmt.Errorf("no command to run")
 	}
 
+	// Details of isolate cmd: https://www.ucw.cz/moe/isolate.1.html
 	args = append([]string{"/usr/local/bin/isolate", "--dir=/code", "--dir=/usr/bin", "--run", "--"}, args...)
 	cmd := exec.Command(args[0], args[1:]...)
 	ctx.cmd = cmd
