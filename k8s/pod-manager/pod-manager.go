@@ -58,12 +58,6 @@ func (pm *PodManager) createRunnerPod() (*RunnerPod, error) {
                     SecurityContext: &corev1.SecurityContext{
                         Privileged: func(b bool) *bool { return &b }(true),
                     },
-                    VolumeMounts: []corev1.VolumeMount{
-                        {
-                            Name: "docker-sock",
-                            MountPath: "/var/run/docker.sock",
-                        },
-                    },
                     Resources: corev1.ResourceRequirements{
                         Limits: corev1.ResourceList{
                             corev1.ResourceMemory: resource.MustParse("512Mi"),
@@ -76,16 +70,6 @@ func (pm *PodManager) createRunnerPod() (*RunnerPod, error) {
                 },
             },
             RestartPolicy: corev1.RestartPolicyNever,
-            Volumes: []corev1.Volume{
-				{
-					Name: "docker-sock",
-					VolumeSource: corev1.VolumeSource{
-                        HostPath: &corev1.HostPathVolumeSource{
-                            Path: "/var/run/docker.sock",
-                        },
-					},
-				},
-			},
         },
     }
 
@@ -259,9 +243,8 @@ func (pm *PodManager) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
     // 모든 종료 상황에서 Pod 안전하게 삭제
     defer func() {
-        pm.logger.Printf("Skipping pod deletion for %s", pod.Name)
-        // pm.logger.Printf("Deleting pod %s", pod.Name)
-        // pm.deleteRunnerPod(pod.Name)
+        pm.logger.Printf("Deleting pod %s", pod.Name)
+        pm.deleteRunnerPod(pod.Name)
     }()
 
     podIP, err := pm.waitForPodReady(pod.Name)

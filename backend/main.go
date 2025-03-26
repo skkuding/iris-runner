@@ -59,19 +59,6 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 	ctx := &ConnectionContext{conn: conn}
 
-	// TODO: remove me
-	// this is for testing purpose
-	sendJSON(ctx.conn, map[string]interface{}{
-		"type": "stdout",
-		"data": "Hi, this is a message from server\n",
-	})
-
-	// create /var/log/iris-runner/hi.txt file
-	// err = os.WriteFile("/var/log/iris-runner/hi.txt", []byte("hi"), 0644)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
 	for {
 		var msg Message
 		err := conn.ReadJSON(&msg)
@@ -168,17 +155,9 @@ func handleCode(ctx *ConnectionContext, msg *Message) error {
 			_ = ctx.cmd.Process.Kill()
 		}
 
-		sendJSON(ctx.conn, map[string]interface{}{
-			"type": "stdout",
-			"data": ">>> runInSandbox()\n",
-		})
-
-		err := runInteractive(ctx, strings.Split(msg.Command, " "))
+		execArgs := strings.Split(msg.Command, " ")
+		err := runInteractive(ctx, execArgs)
 		if err != nil {
-			sendJSON(ctx.conn, map[string]interface{}{
-				"type": "stdout",
-				"data": ">>>> error: " + err.Error() + "\n",
-			})
 			log.Println("runInteractive error:", err)
 			// 실행 중 오류 발생 시 연결 종료
 			ctx.conn.Close()
@@ -258,91 +237,6 @@ func runInteractive(ctx *ConnectionContext, args []string) error {
 
 	return nil
 }
-
-/*
-func runInSandbox(ctx *ConnectionContext, language string) error {
-	ctx_bg := context.Background()
-	uniqueID := uuid.New().String()
-
-	cli, err := client.NewClientWithOpts(client.FromEnv)
-	if err != nil {
-		return err
-	}
-	defer cli.Close()
-
-	if language != "c" {
-		return fmt.Errorf("only c language is supported")
-	}
-
-	// send list of files under /var/run
-	files, err := os.ReadDir("/var/run")
-	if err != nil {
-		return fmt.Errorf("failed to read /var/run: %v", err)
-	}
-	sendJSON(ctx.conn, map[string]interface{}{
-		"type": "stdout",
-		"data": ">>>> Files under /var/run: " + fmt.Sprint(files) + "\n",
-	})
-
-	imageName := "sandbox:" + uniqueID
-	if err := BuildImage(cli, imageName, "sandbox-c.Dockerfile", "."); err != nil {
-		return fmt.Errorf("failed to build image: %v", err)
-	}
-
-	sendJSON(ctx.conn, map[string]interface{}{
-		"type": "stdout",
-		"data": ">>>> Image build succeed\n",
-	})
-
-	containerConfig := &container.Config{
-		Image: imageName,
-		Tty:   false,
-	}
-	resp, err := cli.ContainerCreate(ctx_bg, containerConfig, nil, nil, nil, "")
-	if err != nil {
-		return fmt.Errorf("failed to create container: %v", err)
-	}
-
-	sendJSON(ctx.conn, map[string]interface{}{
-		"type": "stdout",
-		"data": ">>>> Container created\n",
-	})
-
-	containerID := resp.ID
-	defer func() {
-		cli.ContainerRemove(ctx_bg, containerID, container.RemoveOptions{Force: true})
-	}()
-
-	if err := cli.ContainerStart(ctx_bg, resp.ID, container.StartOptions{}); err != nil {
-		return fmt.Errorf("failed to start container: %v", err)
-	}
-
-	sendJSON(ctx.conn, map[string]interface{}{
-		"type": "stdout",
-		"data": ">>>> Container started\n",
-	})
-
-	out, err := cli.ContainerLogs(ctx_bg, resp.ID, container.LogsOptions{
-		ShowStdout: true,
-		ShowStderr: true,
-		Follow:     true,
-		Timestamps: false,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to get container logs: %v", err)
-	}
-	defer out.Close()
-
-	sendJSON(ctx.conn, map[string]interface{}{
-		"type": "stdout",
-		"data": ">>>> Container logs received\n",
-	})
-
-	streamOutput(ctx, out, "stdout")
-
-	return nil
-}
-*/
 
 // r(표준출력/표준에러)에서 데이터를 읽어, 실시간으로 웹소켓 전송
 func streamOutput(ctx *ConnectionContext, r io.ReadCloser, streamType string) {
