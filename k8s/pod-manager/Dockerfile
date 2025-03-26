@@ -7,7 +7,7 @@ WORKDIR /app
 COPY go.mod go.sum /app/
 RUN go mod download
 
-COPY pod-manager.go /app
+COPY *.go /app
 RUN go build -o pod-manager
 
 FROM alpine:3.21.3

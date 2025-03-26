@@ -4,7 +4,7 @@ WORKDIR /code
 COPY go.mod go.sum /code/
 RUN go mod download
 
-COPY main.go /code/
+COPY *.go /code/
 RUN go build -o /code/server
 
 FROM ubuntu:24.04 AS runtime
