@@ -17,7 +17,7 @@ spec:
       serviceAccountName: pod-manager
       containers:
       - name: iris-runner-pod-manager
-        image: iris-runner-pod-manager:latest
+        image: ghcr.io/skkuding/iris-runner-pod-manager:latest
         imagePullPolicy: Never
         ports:
         - containerPort: 8080
