@@ -117,7 +117,9 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 func handleCode(ctx *ConnectionContext, msg *Message) error {
 	filename := msg.Filename
 	if filename == "" {
-		filename = "Main.c"
+		filename = "/code/main.c"
+	} else {
+		filename = "/code/" + filename
 	}
 
 	// 코드 파일 생성
@@ -173,6 +175,8 @@ func runCommand(args []string) (string, error) {
 	if len(args) == 0 {
 		return "", fmt.Errorf("no command to run")
 	}
+
+	args = append([]string{"/usr/local/bin/isolate", "--run", "--dir=/code", "--"}, args...)
 	cmd := exec.Command(args[0], args[1:]...)
 	output, err := cmd.CombinedOutput()
 	return string(output), err
@@ -185,7 +189,6 @@ func runInteractive(ctx *ConnectionContext, args []string) error {
 	}
 
 	args = append([]string{"/usr/local/bin/isolate", "--run", "--dir=/code", "--"}, args...)
-
 	cmd := exec.Command(args[0], args...)
 	ctx.cmd = cmd
 
@@ -228,6 +231,11 @@ func runInteractive(ctx *ConnectionContext, args []string) error {
 			"return_code": exitCode,
 			"error":       fmt.Sprintf("%v", waitErr),
 		})
+
+		err := exec.Command("/usr/local/bin/isolate", "--cleanup", "--dir=/code").Run()
+		if err != nil {
+			log.Println("isolate cleanup error:", err)
+		}
 
 		// 종료 후 stdinPipe 닫기
 		ctx.stdinPipe = nil
