@@ -176,7 +176,7 @@ func runCommand(args []string) (string, error) {
 		return "", fmt.Errorf("no command to run")
 	}
 
-	args = append([]string{"/usr/local/bin/isolate", "--run", "--dir=/code", "--"}, args...)
+	args = append([]string{"/usr/local/bin/isolate", "--dir=/code", "--run", "--"}, args...)
 	cmd := exec.Command(args[0], args[1:]...)
 	output, err := cmd.CombinedOutput()
 	return string(output), err
@@ -188,8 +188,8 @@ func runInteractive(ctx *ConnectionContext, args []string) error {
 		return fmt.Errorf("no command to run")
 	}
 
-	args = append([]string{"/usr/local/bin/isolate", "--run", "--dir=/code", "--"}, args...)
-	cmd := exec.Command(args[0], args...)
+	args = append([]string{"/usr/local/bin/isolate", "--dir=/code", "--run", "--"}, args...)
+	cmd := exec.Command(args[0], args[1:]...)
 	ctx.cmd = cmd
 
 	stdinPipe, err := cmd.StdinPipe()
@@ -232,7 +232,7 @@ func runInteractive(ctx *ConnectionContext, args []string) error {
 			"error":       fmt.Sprintf("%v", waitErr),
 		})
 
-		err := exec.Command("/usr/local/bin/isolate", "--cleanup", "--dir=/code").Run()
+		err := exec.Command("/usr/local/bin/isolate", "--dir=/code", "--cleanup").Run()
 		if err != nil {
 			log.Println("isolate cleanup error:", err)
 		}
