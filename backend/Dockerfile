@@ -1,5 +1,13 @@
-# IRIS RUNNER
-FROM ubuntu:24.04
+FROM golang:1.24-alpine AS build
+
+WORKDIR /code
+COPY go.mod go.sum /code/
+RUN go mod download
+
+COPY main.go /code/
+RUN go build -o /code/server
+
+FROM ubuntu:24.04 AS runtime
 
 RUN apt update && apt install -y \
     wget \
@@ -24,13 +32,8 @@ RUN wget -P /tmp https://github.com/ioi/isolate/archive/master.tar.gz \
     && isolate --init
 
 WORKDIR /app
-
-COPY go.mod go.sum /app/
-RUN go mod download
-
-COPY main.go /app/
-RUN go build -o server
+COPY --from=build /code/server /app/server
 
 EXPOSE 8000
 
-CMD ["./server"]
+CMD ["/app/server"]
