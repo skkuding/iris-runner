@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"log"
@@ -10,10 +9,6 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
-
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
-	"github.com/google/uuid"
 
 	"github.com/gorilla/websocket"
 )
@@ -138,13 +133,6 @@ func handleCode(ctx *ConnectionContext, msg *Message) error {
 		filename = "Main.c"
 	}
 
-	// TODO(jaemin): remove this hack
-	// this code is for running c code in docker sandbox
-	// only for testing purpose
-	if msg.Language == "c" {
-		filename = "main.c"
-	}
-
 	// 코드 파일 생성
 	err := os.WriteFile(filename, []byte(msg.Source), 0644)
 	if err != nil {
@@ -185,8 +173,7 @@ func handleCode(ctx *ConnectionContext, msg *Message) error {
 			"data": ">>> runInSandbox()\n",
 		})
 
-		err := runInSandbox(ctx, msg.Language)
-		// err := runInteractive(ctx, strings.Split(msg.Command, " "))
+		err := runInteractive(ctx, strings.Split(msg.Command, " "))
 		if err != nil {
 			sendJSON(ctx.conn, map[string]interface{}{
 				"type": "stdout",
@@ -218,7 +205,9 @@ func runInteractive(ctx *ConnectionContext, args []string) error {
 		return fmt.Errorf("no command to run")
 	}
 
-	cmd := exec.Command(args[0], args[1:]...)
+	args = append([]string{"/usr/local/bin/isolate", "--run", "--dir=/code", "--"}, args...)
+
+	cmd := exec.Command(args[0], args...)
 	ctx.cmd = cmd
 
 	stdinPipe, err := cmd.StdinPipe()
@@ -270,6 +259,7 @@ func runInteractive(ctx *ConnectionContext, args []string) error {
 	return nil
 }
 
+/*
 func runInSandbox(ctx *ConnectionContext, language string) error {
 	ctx_bg := context.Background()
 	uniqueID := uuid.New().String()
@@ -352,6 +342,7 @@ func runInSandbox(ctx *ConnectionContext, language string) error {
 
 	return nil
 }
+*/
 
 // r(표준출력/표준에러)에서 데이터를 읽어, 실시간으로 웹소켓 전송
 func streamOutput(ctx *ConnectionContext, r io.ReadCloser, streamType string) {
