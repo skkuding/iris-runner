@@ -31,6 +31,9 @@ RUN wget -P /tmp https://github.com/ioi/isolate/archive/master.tar.gz \
     && install /tmp/isolate-master/isolate /usr/local/bin/isolate \
     && isolate --init
 
+# Create a sandbox directory
+RUN mkdir /code
+
 WORKDIR /app
 COPY --from=build /code/server /app/server
 
