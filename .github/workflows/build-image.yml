@@ -35,6 +35,6 @@ jobs:
         with:
           context: ${{ matrix.target.dir }}
           push: true
-          tags: ghcr.io/skkuding/iris-runner-${{ matrix.target.name }}:jaemin
+          tags: ghcr.io/skkuding/iris-runner-${{ matrix.target.name }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
