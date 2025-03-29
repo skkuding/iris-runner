@@ -53,7 +53,7 @@ jobs:
           docker pull ghcr.io/skkuding/iris-runner-frontend:latest
           docker run -d \
             --name iris-runner-frontend \
-            -p 80:80 \
+            -p 3000:3000 \
             ghcr.io/skkuding/iris-runner-frontend:latest
 
       - name: Verify Minikube status
