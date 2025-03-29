@@ -51,8 +51,9 @@ jobs:
           eval $(minikube docker-env -u)
           docker rm -f iris-runner-frontend || true
           docker pull ghcr.io/skkuding/iris-runner-frontend:latest
-          docker run -d --name iris-runner-frontend \ 
-            -p 80:80 \ 
+          docker run -d \
+            --name iris-runner-frontend \
+            -p 80:80 \
             ghcr.io/skkuding/iris-runner-frontend:latest
 
       - name: Verify Minikube status
