@@ -2,7 +2,6 @@ name: CD - Production
 
 on:
   push:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -81,6 +80,7 @@ jobs:
 
       - name: Deploy Pod Manager
         run: kubectl apply -f k8s/iris-runner-pod-manager.yml
+        kubectl rollout restart deployment/iris-runner-pod-manager
 
       - name: Configure Ingress
         run: kubectl apply -f k8s/ingress.yml
