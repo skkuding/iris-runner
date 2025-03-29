@@ -1,3 +1,9 @@
+name: CD - Production
+
+on:
+  push:
+  workflow_dispatch:
+
 jobs:
   build-image:
     name: Build image
