@@ -318,7 +318,7 @@ func (pm *PodManager) handleWebSocket(w http.ResponseWriter, r *http.Request) {
     // 클라이언트 -> Pod: 클라이언트 메시지를 Pod로 전달
     go func() {
         defer func() {
-            pm.logger.Printf("Client -> Pod is ready to close 동훈동훈동훈")
+            pm.logger.Printf("Client -> Pod is ready to close")
             close(closeChan)
         }()
         
