@@ -5,11 +5,19 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-image:
-    name: Build image
+  generate-timestamp:
     runs-on: ubuntu-latest
     outputs:
       timestamp: ${{ steps.timestamp.outputs.timestamp }}
+    steps:
+      - name: Generate timestamp
+        id: timestamp
+        run: echo "timestamp=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
+
+  build-image:
+    needs: [generate-timestamp]
+    name: Build image
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         target: [
@@ -20,10 +28,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Generate timestamp
-        id: timestamp
-        run: echo "timestamp=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -40,14 +44,14 @@ jobs:
         with:
           context: ${{ matrix.target.dir }}
           push: true
-          tags: ghcr.io/skkuding/iris-runner-${{ matrix.target.name }}:${{ steps.timestamp.outputs.timestamp }}
+          tags: ghcr.io/skkuding/iris-runner-${{ matrix.target.name }}:${{ needs.generate-timestamp.outputs.timestamp }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   deploy:
     name: Deploy
     runs-on: self-hosted
-    needs: [build-image]
+    needs: [generate-timestamp, build-image]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -56,11 +60,11 @@ jobs:
         run: |
           eval $(minikube docker-env -u)
           docker rm -f iris-runner-frontend || true
-          docker pull ghcr.io/skkuding/iris-runner-frontend:${{ needs.build-image.outputs.timestamp }}
+          docker pull ghcr.io/skkuding/iris-runner-frontend:${{ needs.generate-timestamp.outputs.timestamp }}
           docker run -d \
             --name iris-runner-frontend \
             -p 3000:3000 \
-            ghcr.io/skkuding/iris-runner-frontend:${{ needs.build-image.outputs.timestamp }}
+            ghcr.io/skkuding/iris-runner-frontend:${{ needs.generate-timestamp.outputs.timestamp }}
 
       - name: Verify Minikube status
         run: |
@@ -77,10 +81,10 @@ jobs:
       - name: Pull images in Minikube Cluster
         run: |
           eval $(minikube docker-env)
-          docker pull ghcr.io/skkuding/iris-runner-backend:${{ needs.build-image.outputs.timestamp }}
-          docker pull ghcr.io/skkuding/iris-runner-pod-manager:${{ needs.build-image.outputs.timestamp }}
+          docker pull ghcr.io/skkuding/iris-runner-backend:${{ needs.generate-timestamp.outputs.timestamp }}
+          docker pull ghcr.io/skkuding/iris-runner-pod-manager:${{ needs.generate-timestamp.outputs.timestamp }}
 
-          docker tag ghcr.io/skkuding/iris-runner-backend:${{ needs.build-image.outputs.timestamp }} ghcr.io/skkuding/iris-runner-backend:latest
+          docker tag ghcr.io/skkuding/iris-runner-backend:${{ needs.generate-timestamp.outputs.timestamp }} ghcr.io/skkuding/iris-runner-backend:latest
 
       - name: Deploy RBAC
         run: |
