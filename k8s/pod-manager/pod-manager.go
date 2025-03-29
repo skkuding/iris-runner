@@ -16,6 +16,10 @@ import (
     "k8s.io/client-go/rest"
 )
 
+const (
+    TimestampImageTag = "TIMESTAMP_IMAGE_TAG"
+)
+
 // RunnerPod: 생성된 Runner Pod의 정보를 저장
 type RunnerPod struct {
     Name      string
@@ -39,6 +43,11 @@ func NewPodManager(clientset *kubernetes.Clientset) *PodManager {
 
 // createRunnerPod: 코드 실행을 위한 새로운 Pod 생성 (제한 리소스: 0.5 CPU, 512MB Memory)
 func (pm *PodManager) createRunnerPod() (*RunnerPod, error) {
+    imageTag := os.Getenv(TimestampImageTag)
+    if imageTag == "" {
+        return nil, fmt.Errorf("environment variable %s is not set", TimestampImageTag)
+    }
+
     pod := &corev1.Pod{
         ObjectMeta: metav1.ObjectMeta{
             GenerateName: "runner-",
@@ -50,7 +59,7 @@ func (pm *PodManager) createRunnerPod() (*RunnerPod, error) {
             Containers: []corev1.Container{
                 {
                     Name:  "runner",
-                    Image: "ghcr.io/skkuding/iris-runner-backend:latest",
+                    Image: fmt.Sprintf("ghcr.io/skkuding/iris-runner-backend:%s", imageTag),
                     ImagePullPolicy: corev1.PullNever,  
                     Ports: []corev1.ContainerPort{
                         {ContainerPort: 8000},
