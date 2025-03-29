@@ -17,8 +17,11 @@ spec:
       serviceAccountName: pod-manager
       containers:
       - name: iris-runner-pod-manager
-        image: ghcr.io/skkuding/iris-runner-pod-manager:latest
+        image: ghcr.io/skkuding/iris-runner-pod-manager:$TIMESTAMP
         imagePullPolicy: Never
+        env:
+        - name: TIMESTAMP_IMAGE_TAG
+          value: $TIMESTAMP
         ports:
         - containerPort: 8080
         resources:
