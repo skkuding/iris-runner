@@ -79,8 +79,9 @@ jobs:
           kubectl apply -f k8s/rbac.yml
 
       - name: Deploy Pod Manager
-        run: kubectl apply -f k8s/iris-runner-pod-manager.yml
-        kubectl rollout restart deployment/iris-runner-pod-manager
+        run: |
+          kubectl apply -f k8s/iris-runner-pod-manager.yml
+          kubectl rollout restart deployment/iris-runner-pod-manager
 
       - name: Configure Ingress
         run: kubectl apply -f k8s/ingress.yml
