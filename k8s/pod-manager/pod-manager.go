@@ -55,6 +55,9 @@ func (pm *PodManager) createRunnerPod() (*RunnerPod, error) {
                     Ports: []corev1.ContainerPort{
                         {ContainerPort: 8000},
                     },
+                    SecurityContext: &corev1.SecurityContext{
+                        Privileged: func(b bool) *bool { return &b }(true),
+                    },
                     Resources: corev1.ResourceRequirements{
                         Limits: corev1.ResourceList{
                             corev1.ResourceMemory: resource.MustParse("512Mi"),
