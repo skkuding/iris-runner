@@ -19,12 +19,12 @@ var CompileOptions = map[string]CompileOption{
 	C: {
 		Filename:   "/code/main.c",
 		CompileCmd: []string{"/usr/bin/gcc", "-o", "/code/main", "/code/main.c"},
-		ExecuteCmd: []string{"/code/main"},
+		ExecuteCmd: []string{"/usr/bin/stdbuf", "-o0", "/code/main"},
 	},
 	CPP: {
 		Filename:   "/code/main.cpp",
 		CompileCmd: []string{"/usr/bin/g++", "-o", "/code/main", "/code/main.cpp"},
-		ExecuteCmd: []string{"/code/main"},
+		ExecuteCmd: []string{"/usr/bin/stdbuf", "-o0", "/code/main"},
 	},
 	JAVA: {
 		Filename:   "/code/Main.java",
