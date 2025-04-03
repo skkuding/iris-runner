@@ -7,12 +7,12 @@ type CompileOption struct {
 }
 
 const (
-	C          = "c"
-	CPP        = "cpp"
-	JAVA       = "java"
-	GO         = "go"
-	PYTHON     = "python"
-	JAVASCRIPT = "javascript"
+	C          = "C"
+	CPP        = "Cpp"
+	JAVA       = "Java"
+	GO         = "Go"
+	PYTHON     = "Python3"
+	JAVASCRIPT = "Javascript"
 )
 
 var CompileOptions = map[string]CompileOption{
