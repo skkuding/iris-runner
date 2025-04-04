@@ -34,12 +34,12 @@
           id="languageSelect"
           class="bg-gray-700 text-white rounded px-2 py-1"
         >
-          <option value="c">C</option>
-          <option value="cpp">C++</option>
-          <option value="javascript">JavaScript</option>
-          <option value="go">Go</option>
-          <option value="java">Java</option>
-          <option value="python">Python3</option>
+          <option value="C">C</option>
+          <option value="Cpp">C++</option>
+          <option value="Javascript">JavaScript</option>
+          <option value="Go">Go</option>
+          <option value="Java">Java</option>
+          <option value="Python3">Python3</option>
         </select>
       </div>
 
@@ -119,32 +119,32 @@
       function getCodeConfig(language) {
         let filename, compileCmd, command;
         switch (language) {
-          case "c":
+          case "C":
             filename = "main.c";
             compileCmd = "gcc main.c -o main";
             command = "./main";
             break;
-          case "cpp":
+          case "Cpp":
             filename = "main.cpp";
             compileCmd = "g++ main.cpp -o main";
             command = "./main";
             break;
-          case "javascript":
+          case "Javascript":
             filename = "main.js";
             compileCmd = undefined;
             command = "node main.js";
             break;
-          case "go":
+          case "Go":
             filename = "main.go";
             compileCmd = "go build -o main main.go";
             command = "./main";
             break;
-          case "java":
+          case "Java":
             filename = "Main.java";
             compileCmd = "javac Main.java";
             command = "java Main";
             break;
-          case "python":
+          case "Python3":
             filename = "main.py";
             compileCmd = undefined;
             command = "python main.py";
