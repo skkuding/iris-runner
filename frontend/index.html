@@ -170,7 +170,7 @@
           onDataDisposable.dispose();
         }
 
-        ws = new WebSocket(`ws://${location.host}/run`);
+        ws = new WebSocket(`wss://${location.host}/run`);
         term.writeln("[시스템] 실행 서버에 연결을 시도합니다...");
 
         ws.onopen = () => {

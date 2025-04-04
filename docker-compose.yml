@@ -10,7 +10,9 @@ services:
       - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     network_mode: host
+
   frontend:
     image: ghcr.io/skkuding/iris-runner-frontend:latest
     container_name: iris-runner-frontend
