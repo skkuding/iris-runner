@@ -15,10 +15,7 @@ import (
 type Message struct {
 	Type       string `json:"type"`        // "code", "input", "echo" 등
 	Language   string `json:"language"`    // c, cpp, java, go, python, ...
-	Filename   string `json:"filename"`    // 예) "hello.c"
 	Source     string `json:"source"`      // 소스코드
-	CompileCmd string `json:"compile_cmd"` // 예) "gcc hello.c -o hello"
-	Command    string `json:"command"`     // 예) "./hello"
 	Data       string `json:"data"`        // "input" 메시지에서 사용 (stdin에 보낼 내용)
 }
 
