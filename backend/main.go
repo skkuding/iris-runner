@@ -100,6 +100,15 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
+		case "exit":
+			sendJSON(conn, map[string]interface{}{
+				"type": "exit",
+				"data": "Process exit",
+			})
+			
+			conn.Close()
+			return
+
 		default:
 			sendJSON(conn, map[string]interface{}{
 				"type":  "error",
