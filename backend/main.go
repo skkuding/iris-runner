@@ -192,7 +192,7 @@ func runInteractive(ctx *ConnectionContext, args []string) error {
 	}
 
 	// Details of isolate cmd: https://www.ucw.cz/moe/isolate.1.html
-	args = append([]string{"/usr/local/bin/isolate", "--dir=/code", "--dir=/usr/bin", "--run", "--"}, args...)
+	args = append([]string{"/usr/local/bin/isolate", "--dir=/code", "--dir=/usr/bin", "--fsize=10240", "--run", "--"}, args...)
 	cmd := exec.Command(args[0], args[1:]...)
 	ctx.cmd = cmd
 
