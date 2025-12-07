@@ -3,6 +3,7 @@ kind: Ingress
 metadata:
   name: iris-runner
   annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-dns01" # 학교 네트워크 특성상(HTTP-01을 위한 80번 포트 사용 불가) DNS-01 사용
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600" # RUN 특성 고려하여 10분으로 조정
     nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "30" # 원본 요청 정보 유지
@@ -22,8 +23,13 @@ metadata:
     
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - run.codedang.com
+      secretName: run-codedang-tls
   rules:
-    - http:
+    - host: run.codedang.com
+      http:
         paths:
           - path: /run
             pathType: Exact

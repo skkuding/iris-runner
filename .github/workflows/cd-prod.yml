@@ -21,11 +21,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target: [
-          {dir: './backend', name: 'backend'},
-          {dir: './frontend', name: 'frontend'},
-          {dir: './k8s/pod-manager', name: 'pod-manager'}
-        ]
+        target:
+          [
+            { dir: "./backend", name: "backend" },
+            { dir: "./frontend", name: "frontend" },
+            { dir: "./k8s/pod-manager", name: "pod-manager" },
+          ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -96,3 +97,7 @@ jobs:
 
       - name: Configure Ingress
         run: kubectl apply -f k8s/ingress.yml
+
+      - name: Configure cert-manager
+        run: |
+          kubectl apply -k k8s/internal/
