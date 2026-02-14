@@ -23,9 +23,8 @@ jobs:
       matrix:
         target:
           [
-            { dir: "./backend", name: "backend" },
+            { dir: "./backend", name: "runner" },
             { dir: "./frontend", name: "frontend" },
-            { dir: "./k8s/pod-manager", name: "pod-manager" },
           ]
     steps:
       - name: Checkout
@@ -46,7 +45,7 @@ jobs:
         with:
           context: ${{ matrix.target.dir }}
           push: true
-          tags: ghcr.io/skkuding/iris-runner-${{ matrix.target.name }}:${{ needs.generate-timestamp.outputs.timestamp }}
+          tags: ghcr.io/skkuding/${{ matrix.target.name }}:${{ needs.generate-timestamp.outputs.timestamp }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -62,11 +61,11 @@ jobs:
         run: |
           eval $(minikube docker-env -u)
           docker rm -f iris-runner-frontend || true
-          docker pull ghcr.io/skkuding/iris-runner-frontend:${{ needs.generate-timestamp.outputs.timestamp }}
+          docker pull ghcr.io/skkuding/frontend:${{ needs.generate-timestamp.outputs.timestamp }}
           docker run -d \
             --name iris-runner-frontend \
             -p 3000:3000 \
-            ghcr.io/skkuding/iris-runner-frontend:${{ needs.generate-timestamp.outputs.timestamp }}
+            ghcr.io/skkuding/frontend:${{ needs.generate-timestamp.outputs.timestamp }}
 
       - name: Verify Minikube status
         run: |
@@ -83,17 +82,12 @@ jobs:
       - name: Pull images in Minikube Cluster
         run: |
           eval $(minikube docker-env)
-          docker pull ghcr.io/skkuding/iris-runner-backend:${{ needs.generate-timestamp.outputs.timestamp }}
-          docker pull ghcr.io/skkuding/iris-runner-pod-manager:${{ needs.generate-timestamp.outputs.timestamp }}
+          docker pull ghcr.io/skkuding/runner:${{ needs.generate-timestamp.outputs.timestamp }}
 
-      - name: Deploy RBAC
+      - name: Deploy Runner
         run: |
-          kubectl apply -f k8s/rbac.yml
-
-      - name: Deploy Pod Manager
-        run: |
-          sed -i "s/\$TIMESTAMP/${{ needs.generate-timestamp.outputs.timestamp }}/g" k8s/iris-runner-pod-manager.yml
-          kubectl apply -f k8s/iris-runner-pod-manager.yml
+          sed -i "s/\$TIMESTAMP/${{ needs.generate-timestamp.outputs.timestamp }}/g" k8s/runner-deployment.yml
+          kubectl apply -f k8s/runner-deployment.yml
 
       - name: Configure Ingress
         run: kubectl apply -f k8s/ingress.yml
