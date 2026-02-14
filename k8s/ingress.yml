@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: runner
+  name: iris-runner
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-dns01" # 학교 네트워크 특성상(HTTP-01을 위한 80번 포트 사용 불가) DNS-01 사용
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
