@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -108,6 +109,14 @@ func main() {
 }
 
 func (s *RunnerServer) wsHandler(w http.ResponseWriter, r *http.Request) {
+	// 1. Upgrade 전에 capacity 체크 (빠른 거절)
+	if len(s.boxPool) == 0 {
+		log.Println("No available boxes, rejecting connection")
+		http.Error(w, "Server is busy. No available boxes. Please try again later.", http.StatusServiceUnavailable)
+		return
+	}
+
+	// 2. WebSocket Upgrade (capacity 확인 후)
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("Upgrade error:", err)
@@ -115,9 +124,22 @@ func (s *RunnerServer) wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	// Box 할당 (채널에서 가져오기, 블로킹)
-	boxID := <-s.boxPool
-	log.Printf("Box %d allocated\n", boxID)
+	// 3. Box 할당 (타임아웃 포함)
+	// 체크와 할당 사이의 시간 차로 인한 TOCTOU 문제 방어
+	// (체크 시 available했지만, Upgrade 중 다른 요청이 가져갈 수 있음)
+	var boxID int32
+	select {
+	case boxID = <-s.boxPool:
+		log.Printf("Box %d allocated\n", boxID)
+	case <-time.After(5 * time.Second):
+		// Upgrade 후 Box를 못 받는 경우 (TOCTOU)
+		log.Println("Failed to allocate box within timeout")
+		sendJSON(conn, map[string]interface{}{
+			"type":  "error",
+			"error": "Failed to allocate box. Please try again.",
+		})
+		return
+	}
 
 	// Box 반환을 보장하기 위한 defer
 	defer func() {

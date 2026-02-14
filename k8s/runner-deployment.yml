@@ -79,7 +79,3 @@ spec:
     targetPort: 8000
     protocol: TCP
   type: ClusterIP
-  sessionAffinity: ClientIP  # WebSocket 연결 유지를 위해
-  sessionAffinityConfig:
-    clientIP:
-      timeoutSeconds: 600  # 10분 (코드 실행 3분 + 여유시간)
