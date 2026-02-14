@@ -9,6 +9,8 @@ RUN go build -o /code/server
 
 FROM ubuntu:24.04 AS runtime
 
+ARG ISOLATE_VERSION=v2.2
+
 RUN apt update && apt install -y \
     wget \
     golang-go \
