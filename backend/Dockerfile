@@ -25,9 +25,10 @@ RUN apt update && apt install -y \
 # Install isolate (https://github.com/ioi/isolate)
 RUN wget -P /tmp https://github.com/ioi/isolate/archive/master.tar.gz \
     && tar -xzvf /tmp/master.tar.gz -C /tmp \
-    && mkdir -p /usr/local/etc \
-    && cp /tmp/isolate-master/default.cf /usr/local/etc/isolate \
     && make -C /tmp/isolate-master isolate \
+    && mkdir -p /usr/local/etc \
+    && (cp /tmp/isolate-master/default.cf /usr/local/etc/isolate 2>/dev/null \
+        || cp /tmp/isolate-master/default.cf.in /usr/local/etc/isolate) \
     && install /tmp/isolate-master/isolate /usr/local/bin/isolate \
     && isolate --init
 
