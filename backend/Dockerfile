@@ -9,8 +9,6 @@ RUN go build -o /code/server
 
 FROM ubuntu:24.04 AS runtime
 
-ARG ISOLATE_VERSION=v2.2
-
 RUN apt update && apt install -y \
     wget \
     golang-go \
@@ -25,12 +23,13 @@ RUN apt update && apt install -y \
     libsystemd-dev
 
 # Install isolate (https://github.com/ioi/isolate)
-RUN wget -O /tmp/isolate.tar.gz https://github.com/ioi/isolate/archive/refs/tags/${ISOLATE_VERSION}.tar.gz \
-    && tar -xzvf /tmp/isolate.tar.gz -C /tmp \
+RUN wget -P /tmp https://github.com/ioi/isolate/archive/master.tar.gz \
+    && tar -xzvf /tmp/master.tar.gz -C /tmp \
     && mkdir -p /usr/local/etc \
-    && make -C /tmp/isolate-${ISOLATE_VERSION#v} isolate default.cf \
-    && cp /tmp/isolate-${ISOLATE_VERSION#v}/default.cf /usr/local/etc/isolate \
-    && install /tmp/isolate-${ISOLATE_VERSION#v}/isolate /usr/local/bin/isolate
+    && cp /tmp/isolate-master/default.cf /usr/local/etc/isolate \
+    && make -C /tmp/isolate-master isolate \
+    && install /tmp/isolate-master/isolate /usr/local/bin/isolate \
+    && isolate --init
 
 # Create a sandbox directory
 RUN mkdir /code

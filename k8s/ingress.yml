@@ -7,7 +7,7 @@ metadata:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600" # RUN 특성 고려하여 10분으로 조정
     nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30" # 원본 요청 정보 유지
     nginx.ingress.kubernetes.io/server-snippets: |
       location /run {
         proxy_set_header Upgrade $http_upgrade;
@@ -36,6 +36,6 @@ spec:
             pathType: Exact
             backend:
               service:
-                name: runner
+                name: iris-runner-pod-manager
                 port:
-                  number: 8000
+                  number: 80
